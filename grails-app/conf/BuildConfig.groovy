@@ -35,11 +35,11 @@ grails.project.dependency.resolution = {
             export = false
         }
 
-        test(":hibernate4:4.3.6.1") {
-            export = false
-        }
-        test(":tomcat:8.0.14.1") {
-            export = false
-        }
+//        test(":hibernate4:4.3.6.1") {
+//            export = false
+//        }
+//        test(":tomcat:8.0.14.1") {
+//            export = false
+//        }
     }
 }
