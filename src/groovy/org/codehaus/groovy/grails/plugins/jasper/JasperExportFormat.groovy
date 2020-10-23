@@ -16,28 +16,16 @@
 
 package org.codehaus.groovy.grails.plugins.jasper
 
-import java.lang.reflect.Field
 
-import net.sf.jasperreports.engine.JRExporter
-import net.sf.jasperreports.engine.export.JRCsvExporter
-import net.sf.jasperreports.engine.export.JRCsvExporterParameter
-import net.sf.jasperreports.engine.export.JRHtmlExporter
-import net.sf.jasperreports.engine.export.JRHtmlExporterParameter
-import net.sf.jasperreports.engine.export.JRPdfExporter
-import net.sf.jasperreports.engine.export.JRPdfExporterParameter
-import net.sf.jasperreports.engine.export.JRRtfExporter
-import net.sf.jasperreports.engine.export.JRTextExporter
-import net.sf.jasperreports.engine.export.JRTextExporterParameter
-import net.sf.jasperreports.engine.export.JRXlsExporter
-import net.sf.jasperreports.engine.export.JRXlsExporterParameter
-import net.sf.jasperreports.engine.export.JRXmlExporter
-import net.sf.jasperreports.engine.export.JRXmlExporterParameter
+import net.sf.jasperreports.engine.export.*
 import net.sf.jasperreports.engine.export.oasis.JROdsExporter
 import net.sf.jasperreports.engine.export.oasis.JROdtExporter
 import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter
-import net.sf.jasperreports.engine.export.ooxml.JRDocxExporterParameter
 import net.sf.jasperreports.engine.export.ooxml.JRPptxExporter
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter
+import net.sf.jasperreports.export.*
+
+import java.lang.reflect.Field
 
 /*
  * The supported file formats with their mimetype and file extension.
@@ -95,10 +83,10 @@ enum JasperExportFormat implements Serializable {
    * @param format
    * @return exporter
    */
-  static JRExporter getExporter(JasperExportFormat format) {
+  static Exporter getExporter(JasperExportFormat format) {
     switch (format) {
       case PDF_FORMAT:  return new JRPdfExporter()
-      case HTML_FORMAT: return new JRHtmlExporter()
+      case HTML_FORMAT: return new HtmlExporter()
       case XML_FORMAT:  return new JRXmlExporter()
       case CSV_FORMAT:  return new JRCsvExporter()
       case XLS_FORMAT:  return new JRXlsExporter()
@@ -120,14 +108,14 @@ enum JasperExportFormat implements Serializable {
    */
   static Field[] getExporterFields(JasperExportFormat format) {
     switch (format) {
-      case PDF_FORMAT:  return JRPdfExporterParameter.getFields()
-      case HTML_FORMAT: return JRHtmlExporterParameter.getFields()
-      case XML_FORMAT:  return JRXmlExporterParameter.getFields()
-      case CSV_FORMAT:  return JRCsvExporterParameter.getFields()
-      case XLS_FORMAT:  return JRXlsExporterParameter.getFields()
-      case XLSX_FORMAT: return JRXlsExporterParameter.getFields()
-      case RTF_FORMAT:  return JRTextExporterParameter.getFields()
-      case DOCX_FORMAT: return JRDocxExporterParameter.getFields()
+      case PDF_FORMAT:  return PdfExporterConfiguration.getFields()
+      case HTML_FORMAT: return HtmlExporterConfiguration.getFields()
+      case XML_FORMAT:  return XmlExporterOutput.getFields()
+      case CSV_FORMAT:  return CsvExporterConfiguration.getFields()
+      case XLS_FORMAT:  return XlsExporterConfiguration.getFields()
+      case XLSX_FORMAT: return XlsExporterConfiguration.getFields()
+      case RTF_FORMAT:  return TextExporterConfiguration.getFields()
+      case DOCX_FORMAT: return DocxExporterConfiguration.getFields()
       default: return null
     }
   }

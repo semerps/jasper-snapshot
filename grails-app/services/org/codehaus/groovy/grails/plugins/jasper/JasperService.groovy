@@ -16,28 +16,22 @@
 
  package org.codehaus.groovy.grails.plugins.jasper
 
- import groovy.sql.Sql
+import groovy.sql.Sql
+import net.sf.jasperreports.engine.*
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource
+import net.sf.jasperreports.engine.design.JRCompiler
+import net.sf.jasperreports.engine.export.JRTextExporterParameter
+import net.sf.jasperreports.engine.export.JRXlsExporterParameter
+import net.sf.jasperreports.engine.util.JRLoader
+import net.sf.jasperreports.export.Exporter
+import org.codehaus.groovy.grails.plugins.jasper.JasperExportFormat
+import org.codehaus.groovy.grails.plugins.jasper.JasperReportDef
+import org.codehaus.groovy.grails.plugins.jasper.JasperReportParameter
+import org.springframework.core.io.Resource
+import org.springframework.transaction.annotation.Transactional
 
 import java.lang.reflect.Field
 import java.sql.Connection
-
-import net.sf.jasperreports.engine.JRDataSource
-import net.sf.jasperreports.engine.JRExporter
-import net.sf.jasperreports.engine.JRExporterParameter
-import net.sf.jasperreports.engine.JRParameter;
-import net.sf.jasperreports.engine.JasperCompileManager
-import net.sf.jasperreports.engine.JasperFillManager
-import net.sf.jasperreports.engine.JasperPrint
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource
-import net.sf.jasperreports.engine.export.JRHtmlExporterParameter
-import net.sf.jasperreports.engine.export.JRTextExporterParameter
-import net.sf.jasperreports.engine.export.JRXlsExporterParameter
-import net.sf.jasperreports.engine.util.JRLoader;
-import net.sf.jasperreports.engine.util.JRProperties
-
-import org.springframework.core.io.Resource
-import org.springframework.transaction.annotation.Transactional
 
 /**
  * Generates Jasper reports. Call one of the three generateReport methods to
@@ -59,7 +53,7 @@ class JasperService {
      * @return reportDef
      */
     JasperReportDef buildReportDefinition(parameters, locale, testModel) {
-        JasperReportDef reportDef = new JasperReportDef(name: parameters._file, parameters: parameters,locale: locale)
+        JasperReportDef reportDef = new JasperReportDef(folder: parameters._folder, name: parameters._file, parameters: parameters,locale: locale)
 
         reportDef.fileFormat = JasperExportFormat.determineFileFormat(parameters._format)
         reportDef.reportData = getReportData(testModel, parameters)
@@ -76,8 +70,8 @@ class JasperService {
 	 * @param testModel
 	 * @return reportDef
 	 */
-	List<JasperReportParameter> getReportParameters(name, locale) {
-		JasperReportDef reportDef = new JasperReportDef(name: name, locale: locale)
+	List<JasperReportParameter> getReportParameters(folder, name, locale) {
+		JasperReportDef reportDef = new JasperReportDef(folder: folder, name: name, locale: locale)
 		
 		JasperReport jasperReport = (JasperReport)JRLoader.loadObject(reportDef.getReport().getInputStream());
 		JRParameter[] params = jasperReport.getParameters()
@@ -135,7 +129,7 @@ class JasperService {
      */
     ByteArrayOutputStream generateReport(JasperReportDef reportDef) {
         ByteArrayOutputStream byteArray = new ByteArrayOutputStream()
-        JRExporter exporter = generateExporter(reportDef)
+        Exporter exporter = generateExporter(reportDef)
 
         exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, byteArray)
         exporter.setParameter(JRExporterParameter.CHARACTER_ENCODING, "UTF-8")
@@ -160,7 +154,7 @@ class JasperService {
      */
     ByteArrayOutputStream generateReport(List<JasperReportDef> reports) {
         ByteArrayOutputStream byteArray = new ByteArrayOutputStream()
-        JRExporter exporter = generateExporter(reports.first())
+        Exporter exporter = generateExporter(reports.first())
 
         exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, byteArray)
         exporter.setParameter(JRExporterParameter.CHARACTER_ENCODING, "UTF-8")
@@ -189,8 +183,9 @@ class JasperService {
 
             // This is the current official means for setting the temp folder for jasper reports to use when compiling
             // reports on the fly, but it doesn't work
-            JRProperties.setProperty(JRProperties.COMPILER_TEMP_DIR, tempFolder.getAbsolutePath())
-
+            //JRProperties.setProperty(JRProperties.COMPILER_TEMP_DIR, tempFolder.getAbsolutePath())
+            JasperReportsContext jasperReportsContext = DefaultJasperReportsContext.getInstance();
+            jasperReportsContext.setProperty(JRCompiler.COMPILER_TEMP_DIR, tempFolder.getAbsolutePath())
             // This is a deprecated means for setting the temp folder that supposedly still works (still in the Jasper
             // Reports source code trunk as of 14-Aug-2008, and, in fact, takes precedence over the official method);
             // however, it doesn't work either.
@@ -212,7 +207,7 @@ class JasperService {
      * @param reportDef
      * @return JRExporter
      */
-    private JRExporter generateExporter(JasperReportDef reportDef) {
+    private Exporter generateExporter(JasperReportDef reportDef) {
         if (reportDef.parameters.SUBREPORT_DIR == null) {
             reportDef.parameters.SUBREPORT_DIR = reportDef.getFilePath()
         }
@@ -229,7 +224,7 @@ class JasperService {
             reportDef.parameters.REPORT_LOCALE = Locale.getDefault()
         }
 
-        JRExporter exporter = JasperExportFormat.getExporter(reportDef.fileFormat)
+        Exporter exporter = JasperExportFormat.getExporter(reportDef.fileFormat)
         Field[] fields = JasperExportFormat.getExporterFields(reportDef.fileFormat)
 
         Boolean useDefaultParameters = reportDef.parameters.useDefaultParameters.equals("true")
@@ -316,12 +311,12 @@ class JasperService {
      */
     private void applyDefaultParameters(JRExporter exporter, JasperExportFormat format) {
         switch (format) {
-            case JasperExportFormat.HTML_FORMAT:
-            exporter.setParameter(JRHtmlExporterParameter.IS_USING_IMAGES_TO_ALIGN, false)
-            break
+//            case JasperExportFormat.HTML_FORMAT:
+//            exporter.setParameter(JRHtmlExporterParameter.IS_USING_IMAGES_TO_ALIGN, false)
+//            break
             case JasperExportFormat.XLS_FORMAT:
             exporter.setParameter(JRXlsExporterParameter.IS_ONE_PAGE_PER_SHEET, true)
-            exporter.setParameter(JRXlsExporterParameter.IS_AUTO_DETECT_CELL_TYPE, true)
+//            exporter.setParameter(JRXlsExporterParameter.IS_AUTO_DETECT_CELL_TYPE, true)
             exporter.setParameter(JRXlsExporterParameter.IS_WHITE_PAGE_BACKGROUND, false)
             exporter.setParameter(JRXlsExporterParameter.IS_REMOVE_EMPTY_SPACE_BETWEEN_ROWS, true)
             break

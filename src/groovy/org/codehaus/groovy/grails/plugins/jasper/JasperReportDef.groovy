@@ -25,7 +25,7 @@ import net.sf.jasperreports.engine.util.JRLoader;
 import org.apache.commons.io.FilenameUtils
 
 import grails.util.Holders
-
+import org.codehaus.groovy.grails.plugins.jasper.JasperExportFormat
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
 
